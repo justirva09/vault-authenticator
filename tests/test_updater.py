@@ -25,9 +25,13 @@ def test_parse_version_ordering():
 class _FakeResponse:
     def __init__(self, body, headers=None):
         self._body = body
+        self._read = False
         self.headers = headers or {}
 
     def read(self, n=-1):
+        if self._read:
+            return b""
+        self._read = True
         return self._body
 
     def __enter__(self):
@@ -68,6 +72,22 @@ def test_check_for_update_network_error_sets_error_phase():
     status = updater.get_status()
     assert status["phase"] == "error"
     assert "no network" in status["error"]
+
+
+def test_check_for_update_passes_certifi_ssl_context():
+    payload = json.dumps({"tag_name": "v0.1.0", "assets": []}).encode("utf-8")
+    with patch("updater.urllib.request.urlopen", return_value=_FakeResponse(payload)) as mock_urlopen:
+        updater.check_for_update("0.1.0")
+    _, kwargs = mock_urlopen.call_args
+    assert kwargs.get("context") is updater._SSL_CONTEXT
+
+
+def test_download_passes_certifi_ssl_context(tmp_path):
+    payload = b"file contents"
+    with patch("updater.urllib.request.urlopen", return_value=_FakeResponse(payload)) as mock_urlopen:
+        updater._download("http://x/file", str(tmp_path / "out.bin"), lambda p: None)
+    _, kwargs = mock_urlopen.call_args
+    assert kwargs.get("context") is updater._SSL_CONTEXT
 
 
 def test_sha256_of(tmp_path):

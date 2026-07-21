@@ -11,6 +11,7 @@ import os
 import posixpath
 import re
 import shutil
+import ssl
 import subprocess
 import sys
 import tarfile
@@ -19,8 +20,15 @@ import threading
 import urllib.request
 import zipfile
 
+import certifi
+
 REPO = "justirva09/vault-authenticator"
 GITHUB_API_LATEST = f"https://api.github.com/repos/{REPO}/releases/latest"
+
+# PyInstaller-frozen builds don't reliably inherit the OS's CA trust store,
+# so HTTPS requests need an explicit CA bundle or they fail with
+# CERTIFICATE_VERIFY_FAILED.
+_SSL_CONTEXT = ssl.create_default_context(cafile=certifi.where())
 
 ASSET_NAMES = {
     "darwin": "Vault-Authenticator-macOS.zip",
@@ -68,7 +76,7 @@ def check_for_update(current_version):
         req = urllib.request.Request(
             GITHUB_API_LATEST, headers={"User-Agent": "vault-authenticator-updater"}
         )
-        with urllib.request.urlopen(req, timeout=10) as resp:
+        with urllib.request.urlopen(req, timeout=10, context=_SSL_CONTEXT) as resp:
             data = json.loads(resp.read().decode("utf-8"))
         latest_tag = data.get("tag_name", "")
         latest_version = latest_tag.lstrip("v")
@@ -85,7 +93,7 @@ def check_for_update(current_version):
 
 def _download(url, dest_path, on_progress):
     req = urllib.request.Request(url, headers={"User-Agent": "vault-authenticator-updater"})
-    with urllib.request.urlopen(req, timeout=30) as resp:
+    with urllib.request.urlopen(req, timeout=30, context=_SSL_CONTEXT) as resp:
         total = int(resp.headers.get("Content-Length", 0) or 0)
         read = 0
         with open(dest_path, "wb") as f:
