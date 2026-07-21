@@ -9,7 +9,7 @@ import updater
 
 # Bumped automatically by semantic-release based on conventional commits -
 # don't edit by hand. See pyproject.toml [tool.semantic_release].
-__version__ = "0.1.0"
+__version__ = "0.2.0"
 
 app = Flask(__name__)
 app.secret_key = __import__("os").urandom(24)
