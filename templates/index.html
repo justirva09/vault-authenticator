@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Vault — Authenticator</title>
+<link rel="icon" type="image/png" href="/static/favicon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+
+<div class="grain"></div>
+
+<!-- SETUP SCREEN (first run only) -->
+<section id="view-setup" class="view centered-view hidden">
+  <div class="lock-card">
+    <div class="dial-mark" aria-hidden="true">
+      <svg viewBox="0 0 100 100"><circle class="dial-ring" cx="50" cy="50" r="42"/></svg>
+    </div>
+    <p class="eyebrow">First-time setup</p>
+    <h1>Set a vault password</h1>
+    <p class="sub">This encrypts every secret stored on this machine. It's never sent anywhere, and there's no recovery if you forget it — write it down somewhere safe.</p>
+    <input id="setup-password" type="password" placeholder="Master password" autocomplete="new-password">
+    <input id="setup-password-confirm" type="password" placeholder="Confirm password" autocomplete="new-password">
+    <button id="setup-submit" class="btn-primary">Create vault</button>
+    <p id="setup-error" class="error-text"></p>
+  </div>
+</section>
+
+<!-- LOCK SCREEN -->
+<section id="view-lock" class="view centered-view hidden">
+  <div class="lock-card">
+    <div class="dial-mark" aria-hidden="true">
+      <svg viewBox="0 0 100 100"><circle class="dial-ring" cx="50" cy="50" r="42"/></svg>
+    </div>
+    <p class="eyebrow">Locked</p>
+    <h1>Enter your vault password</h1>
+    <input id="lock-password" type="password" placeholder="Master password" autocomplete="current-password">
+    <button id="lock-submit" class="btn-primary">Unlock</button>
+    <p id="lock-error" class="error-text"></p>
+  </div>
+</section>
+
+<!-- DASHBOARD -->
+<section id="view-dashboard" class="view hidden">
+  <header class="topbar">
+    <div class="brand">
+      <span class="brand-mark">◈</span>
+      <span class="brand-name">Vault</span>
+    </div>
+    <div class="topbar-actions">
+      <button id="btn-import" class="btn-ghost">Import codes</button>
+      <button id="btn-lock" class="btn-ghost">Lock</button>
+    </div>
+  </header>
+
+  <main class="dashboard">
+    <div id="empty-state" class="empty-state hidden">
+      <p class="eyebrow">No accounts yet</p>
+      <h2>Nothing in the vault</h2>
+      <p class="sub">Import your Google Authenticator export QR code to get started.</p>
+      <button class="btn-primary" id="empty-import-btn">Import codes</button>
+    </div>
+    <div id="account-grid" class="account-grid"></div>
+  </main>
+</section>
+
+<!-- IMPORT MODAL -->
+<div id="import-modal" class="modal-backdrop hidden">
+  <div class="modal">
+    <div class="modal-head">
+      <h2>Import accounts</h2>
+      <button id="modal-close" class="btn-icon" aria-label="Close">✕</button>
+    </div>
+
+    <div class="tabs">
+      <button class="tab-btn active" data-tab="camera">Scan with camera</button>
+      <button class="tab-btn" data-tab="file">Upload image</button>
+    </div>
+
+    <div id="tab-camera" class="tab-panel">
+      <div class="camera-wrap">
+        <video id="camera-video" playsinline autoplay muted></video>
+        <div class="scan-frame"></div>
+      </div>
+      <p class="sub small">Open Google Authenticator on your phone → menu → Transfer/Export accounts → hold the QR code up to your webcam.</p>
+      <p class="sub small">Tip: this QR code is dense — glare or a tilted angle often stops it from scanning. Lay the phone flat, turn up screen brightness, hold it steady and fill most of the frame. If it still won't catch, use <strong>Upload image</strong> with a screenshot instead — that's much more reliable.</p>
+      <p id="scan-status" class="sub small" style="color: var(--accent-dim);">Scanning…</p>
+      <p id="camera-error" class="error-text"></p>
+    </div>
+
+    <div id="tab-file" class="tab-panel hidden">
+      <label class="dropzone" id="dropzone">
+        <input type="file" id="file-input" accept="image/*" hidden>
+        <span class="dropzone-icon">⤓</span>
+        <span>Drop a screenshot of the QR code here, or click to choose a file</span>
+      </label>
+      <p id="file-error" class="error-text"></p>
+    </div>
+
+    <canvas id="scan-canvas" hidden></canvas>
+
+    <div id="import-preview" class="import-preview hidden">
+      <p class="eyebrow">Found in this code</p>
+      <div id="preview-list" class="preview-list"></div>
+      <button id="confirm-import" class="btn-primary">Add to vault</button>
+    </div>
+  </div>
+</div>
+
+<script src="/static/jsQR.js"></script>
+<script src="/static/app.js"></script>
+</body>
+</html>

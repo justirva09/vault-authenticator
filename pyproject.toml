@@ -1,0 +1,21 @@
+[project]
+name = "vault-authenticator"
+version = "0.1.0"
+description = "Local, encrypted TOTP/HOTP authenticator with a desktop app for macOS, Windows, and Linux"
+requires-python = ">=3.9"
+
+[tool.semantic_release]
+version_variables = ["app.py:__version__"]
+branch = "main"
+build_command = false
+major_on_zero = true
+commit_parser = "angular"
+tag_format = "v{version}"
+
+[tool.semantic_release.changelog]
+changelog_file = "CHANGELOG.md"
+
+[tool.semantic_release.commit_parser_options]
+allowed_tags = ["feat", "fix", "perf", "refactor", "docs", "style", "test", "build", "ci", "chore"]
+minor_tags = ["feat"]
+patch_tags = ["fix", "perf"]

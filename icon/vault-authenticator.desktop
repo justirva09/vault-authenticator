@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=Vault Authenticator
+Comment=Local encrypted TOTP/HOTP authenticator
+Exec=%INSTALL_DIR%/vault-authenticator
+Icon=%INSTALL_DIR%/icon_1024.png
+Terminal=false
+Categories=Utility;Security;
+StartupWMClass=vault-authenticator

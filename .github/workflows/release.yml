@@ -1,0 +1,113 @@
+name: Release
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+jobs:
+  # Looks at commit messages since the last tag (Conventional Commits:
+  # feat:, fix:, feat!:/BREAKING CHANGE: etc.) and decides whether this is a
+  # patch/minor/major bump, or no release at all if nothing release-worthy
+  # landed. Bumps app.py:__version__, updates CHANGELOG.md, tags, and
+  # creates the GitHub Release that the build job below attaches binaries to.
+  release:
+    runs-on: ubuntu-latest
+    outputs:
+      released: ${{ steps.release.outputs.released }}
+      version: ${{ steps.release.outputs.version }}
+      tag: ${{ steps.release.outputs.tag }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Python Semantic Release
+        id: release
+        uses: python-semantic-release/python-semantic-release@v9
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+
+  # Builds the desktop app for each OS and attaches it to the release
+  # created above. Only runs when a release actually happened (i.e. skips
+  # entirely on commits like "docs: fix typo" that don't warrant a version bump).
+  build:
+    needs: release
+    if: needs.release.outputs.released == 'true'
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: macos-latest
+            spec: vault.spec
+            artifact: Vault-Authenticator-macOS
+          - os: windows-latest
+            spec: vault_windows.spec
+            artifact: Vault-Authenticator-Windows
+          - os: ubuntu-latest
+            spec: vault_linux.spec
+            artifact: Vault-Authenticator-Linux
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.release.outputs.tag }}
+
+      - name: Install Linux system deps
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y python3-gi python3-gi-cairo gir1.2-gtk-3.0 \
+            libgirepository1.0-dev gcc libcairo2-dev pkg-config python3-dev \
+            gir1.2-webkit2-4.1 || sudo apt-get install -y gir1.2-webkit2-4.0
+
+      - name: Set up Python (macOS/Windows)
+        if: runner.os != 'Linux'
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies (macOS/Windows)
+        if: runner.os != 'Linux'
+        run: pip install -r requirements.txt
+
+      - name: Install dependencies (Linux, using system Python for GTK access)
+        if: runner.os == 'Linux'
+        run: |
+          python3 -m venv --system-site-packages .venv
+          source .venv/bin/activate
+          pip install -r requirements.txt
+          echo "$PWD/.venv/bin" >> "$GITHUB_PATH"
+
+      - name: Build
+        run: pyinstaller ${{ matrix.spec }}
+
+      - name: Package (macOS)
+        if: runner.os == 'macOS'
+        run: |
+          cd dist
+          zip -r "../${{ matrix.artifact }}.zip" "Vault Authenticator.app"
+
+      - name: Package (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          Compress-Archive -Path "dist/Vault Authenticator" -DestinationPath "${{ matrix.artifact }}.zip"
+
+      - name: Package (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          cd dist
+          tar -czf "../${{ matrix.artifact }}.tar.gz" vault-authenticator
+
+      - name: Upload to release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ needs.release.outputs.tag }}
+          files: |
+            ${{ matrix.artifact }}.zip
+            ${{ matrix.artifact }}.tar.gz
+          fail_on_unmatched_files: false
