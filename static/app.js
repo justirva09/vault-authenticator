@@ -22,7 +22,64 @@ async function boot() {
     showView('#view-dashboard');
     startDashboard();
   }
+  checkForUpdate();
 }
+
+// ---------------- Auto-update ----------------
+let updatePollTimer = null;
+
+async function checkForUpdate() {
+  await fetch('/api/update/check', { method: 'POST' });
+  updatePollTimer = setInterval(pollUpdateStatus, 1500);
+}
+
+async function pollUpdateStatus() {
+  let data;
+  try {
+    const res = await fetch('/api/update/status');
+    data = await res.json();
+  } catch (e) {
+    return; // server likely mid-restart after an applied update
+  }
+  renderUpdateBanner(data);
+  if (data.phase === 'error') clearInterval(updatePollTimer);
+}
+
+function renderUpdateBanner(data) {
+  const banner = $('#update-banner');
+  const text = $('#update-banner-text');
+  const btn = $('#update-banner-btn');
+
+  if (data.phase === 'available') {
+    text.textContent = `Version ${data.latest_version} is available.`;
+    btn.textContent = 'Update';
+    btn.disabled = false;
+    banner.classList.remove('hidden');
+  } else if (data.phase === 'downloading') {
+    text.textContent = `Downloading update… ${data.percent || 0}%`;
+    btn.disabled = true;
+    banner.classList.remove('hidden');
+  } else if (data.phase === 'verifying') {
+    text.textContent = 'Verifying update…';
+    btn.disabled = true;
+    banner.classList.remove('hidden');
+  } else if (data.phase === 'applying') {
+    text.textContent = 'Restarting with the new version…';
+    btn.disabled = true;
+    banner.classList.remove('hidden');
+  } else if (data.phase === 'error') {
+    text.textContent = `Update failed: ${data.error}`;
+    btn.textContent = 'Retry';
+    btn.disabled = false;
+    banner.classList.remove('hidden');
+  } else {
+    banner.classList.add('hidden');
+  }
+}
+
+$('#update-banner-btn').addEventListener('click', async () => {
+  await fetch('/api/update/apply', { method: 'POST' });
+});
 
 // ---------------- Setup ----------------
 $('#setup-submit').addEventListener('click', async () => {

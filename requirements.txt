@@ -14,3 +14,6 @@ pyinstaller>=6.10.0
 #   Qt (pip-only alt): `pip install PyQt5 PyQtWebEngine`
 # build_linux_app.sh detects which you have and offers to install the Qt
 # fallback automatically if needed.
+
+# Needed only for running the test suite (not part of the shipped app)
+pytest>=8.0.0

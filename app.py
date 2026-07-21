@@ -1,9 +1,11 @@
+import threading
 import time
 import pyotp
 from flask import Flask, request, jsonify, render_template, session
 
 import storage
 import migration_parser
+import updater
 
 # Bumped automatically by semantic-release based on conventional commits -
 # don't edit by hand. See pyproject.toml [tool.semantic_release].
@@ -218,6 +220,23 @@ def rename_account(account_id):
         return jsonify({"error": "Account not found"}), 404
 
     return jsonify({"ok": True, "issuer": updated["issuer"], "account_name": updated["account_name"]})
+
+
+@app.route("/api/update/check", methods=["POST"])
+def update_check():
+    threading.Thread(target=updater.check_for_update, args=(__version__,), daemon=True).start()
+    return jsonify({"ok": True})
+
+
+@app.route("/api/update/status")
+def update_status():
+    return jsonify(updater.get_status())
+
+
+@app.route("/api/update/apply", methods=["POST"])
+def update_apply():
+    updater.start_apply()
+    return jsonify({"ok": True})
 
 
 if __name__ == "__main__":

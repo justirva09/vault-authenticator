@@ -103,6 +103,21 @@ jobs:
           cd dist
           tar -czf "../${{ matrix.artifact }}.tar.gz" vault-authenticator
 
+      - name: Checksum (macOS)
+        if: runner.os == 'macOS'
+        run: shasum -a 256 "${{ matrix.artifact }}.zip" > "${{ matrix.artifact }}.zip.sha256"
+
+      - name: Checksum (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $hash = (Get-FileHash "${{ matrix.artifact }}.zip" -Algorithm SHA256).Hash.ToLower()
+          "$hash  ${{ matrix.artifact }}.zip" | Out-File -Encoding ascii "${{ matrix.artifact }}.zip.sha256"
+
+      - name: Checksum (Linux)
+        if: runner.os == 'Linux'
+        run: sha256sum "${{ matrix.artifact }}.tar.gz" > "${{ matrix.artifact }}.tar.gz.sha256"
+
       - name: Upload to release
         uses: softprops/action-gh-release@v2
         with:
@@ -110,4 +125,6 @@ jobs:
           files: |
             ${{ matrix.artifact }}.zip
             ${{ matrix.artifact }}.tar.gz
+            ${{ matrix.artifact }}.zip.sha256
+            ${{ matrix.artifact }}.tar.gz.sha256
           fail_on_unmatched_files: false
