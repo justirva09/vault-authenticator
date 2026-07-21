@@ -1,6 +1,26 @@
 # CHANGELOG
 
 
+## v0.3.0 (2026-07-21)
+
+### Bug Fixes
+
+- Bundle certifi CA bundle for updater HTTPS requests
+  ([`ab3263d`](https://github.com/justirva09/vault-authenticator/commit/ab3263d2684df28e0a12fad6c596b7feb2e56504))
+
+PyInstaller-frozen builds don't reliably inherit the OS CA trust store, so the update checker's
+  urllib calls failed with CERTIFICATE_VERIFY_FAILED in the field (confirmed on a packaged v0.2.0
+  build). Explicit ssl.create_default_context(cafile=certifi.where()) fixes it.
+
+### Features
+
+- Show app version in a footer
+  ([`589ca79`](https://github.com/justirva09/vault-authenticator/commit/589ca7987bb7be679adb994ed21b31c8e5d40a26))
+
+Fixed bottom footer displaying the running version (from /api/status), so the installed build is
+  visible at a glance in the app itself.
+
+
 ## v0.2.0 (2026-07-21)
 
 
