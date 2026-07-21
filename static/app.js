@@ -14,6 +14,8 @@ function showView(id) {
 async function boot() {
   const res = await fetch('/api/status');
   const data = await res.json();
+  const versionEl = $('#app-version');
+  if (versionEl && data.version) versionEl.textContent = `v${data.version}`;
   if (!data.initialized) {
     showView('#view-setup');
   } else if (!data.unlocked) {

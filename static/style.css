@@ -60,6 +60,20 @@ html, body {
   font-size: 12.5px;
 }
 
+.app-footer {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 800;
+  text-align: center;
+  padding: 6px 0;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-faint);
+  pointer-events: none;
+}
+
 /* ---------- Centered lock / setup card ---------- */
 .centered-view {
   min-height: 100vh;
