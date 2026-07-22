@@ -1,176 +1,156 @@
-# Vault — a local desktop authenticator
+# Vault — Local Desktop Authenticator
 
-A simple, self-hosted TOTP authenticator app for your computer. Import your
-accounts straight from the Google Authenticator "Export accounts" QR code
-(scan with your webcam or upload a screenshot), then view live, refreshing
-codes locally — nothing ever leaves your machine.
+[![GitHub Release](https://img.shields.io/github/v/release/justirva09/vault-authenticator)](https://github.com/justirva09/vault-authenticator/releases)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Python Version](https://img.shields.io/badge/python-3.9%2B-blue)](https://www.python.org/downloads/)
 
-## What this is
+A simple, lightweight, self-hosted TOTP authenticator app for your desktop. Easily import your 2FA accounts directly from Google Authenticator's "Export accounts" QR code, view live refreshing codes locally, and keep your credentials completely offline — **nothing ever leaves your machine.**
 
-- A small Flask web app you run locally and open in your browser
-- QR scanning happens **in the browser** (webcam or uploaded image), so no
-  code or secret ever needs to touch a server beyond `127.0.0.1`
-- All account secrets are encrypted at rest with a master password you choose
-  (PBKDF2 + Fernet/AES) — the password is never stored, only a derived key
-- Nothing is sent to the internet. This never talks to any external service.
+> 🔒 **Security & Privacy Highlights**
+> - **Zero Telemetry:** Listens on `127.0.0.1` only. No external requests or cloud dependencies.
+> - **In-Browser QR Processing:** Webcam and image parsing happen locally in your browser.
+> - **Encrypted at Rest:** Secrets are secured using PBKDF2 key derivation and Fernet (AES-256) encryption.
+> - **Lightweight:** Built with Python and `pywebview`—no heavy Electron memory footprint.
 
-## Setup
+---
 
-Requires Python 3.9+.
+## 📷 Preview
+
+<p align="center">
+  <img src="https://github.com/user-attachments/assets/0116e6af-c483-4847-a8a0-31a55732d077" width="30%" />
+  <img src="https://github.com/user-attachments/assets/de4e66aa-7fab-43c5-b877-8ff9251fbb52" width="30%" />
+  <img src="https://github.com/user-attachments/assets/b006ef19-b204-441b-b15e-6a6b7369815b" width="30%" />
+</p>
+
+<p align="center">
+  <img src="https://github.com/user-attachments/assets/220ff5e4-aa81-455d-a7b6-403da5a9c590" width="60%" />
+</p>
+
+ 
+
+---
+
+## 📋 Table of Contents
+- [Quick Start (Python)](#-quick-start-python)
+- [Native Desktop App Builds](#-native-desktop-app-builds)
+  - [macOS](#macos)
+  - [Windows](#windows)
+  - [Linux](#linux)
+- [Importing Accounts from Phone](#-importing-accounts-from-phone)
+- [Day-to-Day Usage](#-day-to-day-usage)
+- [Data Storage & Security](#-data-storage--security)
+- [Contributing & Release Workflow](#-contributing--release-workflow)
+- [Limitations](#-limitations)
+
+---
+
+## 🚀 Quick Start (Python)
+
+If you prefer running directly from source:
+
+**Prerequisites:** Python 3.9+
 
 ```bash
-cd totp-desktop
+# 1. Clone & enter repository
+git clone https://github.com/justirva09/vault-authenticator.git
+cd vault-authenticator
+
+# 2. Set up virtual environment
 python3 -m venv venv
 source venv/bin/activate        # Windows: venv\Scripts\activate
+
+# 3. Install dependencies & run
 pip install -r requirements.txt
 python3 app.py
 ```
 
-Then open **http://127.0.0.1:5057** in your browser.
+Open **`http://127.0.0.1:5057`** in your browser. 
 
-The first time you run it, you'll be asked to set a master password — this
-encrypts everything stored in `data/vault.enc`. There's no password recovery,
-so keep it somewhere safe (a password manager is a good place).
+*On first launch, you will set a **Master Password**. This encrypts your vault. Note: There is no password recovery!*
 
-## Building a native desktop app (no terminal, no browser)
+---
 
-If you don't want to open a terminal and run `python3 app.py` every time,
-you can build this into a real, double-clickable desktop app on macOS,
-Windows, or Linux. All three use [pywebview](https://pywebview.flowrl.com/)
-to open the same local Flask server in its own native window — nothing
-changes about where your data lives or leaves your machine, and the build
-must be run separately on each OS (PyInstaller can't cross-compile).
+## 💻 Native Desktop App Builds
+
+If you prefer a standalone, double-clickable app window without using the terminal, you can build a native bundle. Desktop builds use [pywebview](https://pywebview.flowrl.com/) to render the local interface in a native window.
+
+*Note: Cross-compilation is not supported by PyInstaller; build on the target platform.*
 
 ### macOS
-
 ```bash
-cd totp-desktop
 chmod +x build_mac_app.sh
 ./build_mac_app.sh
 ```
-
-Creates `dist/Vault Authenticator.app`. Drag it into `/Applications`.
-
-- First launch: macOS Gatekeeper will block it since it isn't
-  notarized/signed. Right-click the app → **Open** → **Open** to approve
-  it once.
-- Vault data lives in `~/Library/Application Support/Vault Authenticator/`.
+- **Output:** `dist/Vault Authenticator.app` (Drag to `/Applications`).
+- **First Run:** Right-click the app → **Open** → **Open** to bypass unsigned Gatekeeper warnings.
+- **Data Path:** `~/Library/Application Support/Vault Authenticator/`
 
 ### Windows
-
-```bat
-cd totp-desktop
+```cmd
 build_windows_app.bat
 ```
-
-Creates `dist\Vault Authenticator\Vault Authenticator.exe`. Make a
-shortcut to it (or move the whole `Vault Authenticator` folder anywhere —
-just keep the `.exe` together with its folder).
-
-- Needs the Microsoft Edge WebView2 Runtime, which is already installed on
-  current Windows 10/11. If it's somehow missing, Windows will prompt to
-  install it.
-- Windows SmartScreen will likely warn about an unrecognized app on first
-  launch — click **More info** → **Run anyway**.
-- Vault data lives in `%APPDATA%\Vault Authenticator\`.
+- **Output:** `dist\Vault Authenticator\Vault Authenticator.exe`.
+- **Prerequisites:** Requires Microsoft Edge WebView2 Runtime (pre-installed on modern Windows 10/11).
+- **First Run:** If SmartScreen appears, click **More info** → **Run anyway**.
+- **Data Path:** `%APPDATA%\Vault Authenticator\`
 
 ### Linux
-
 ```bash
-cd totp-desktop
 chmod +x build_linux_app.sh
 ./build_linux_app.sh
 ```
+- **Prerequisites:** Requires a web rendering backend (`webkit2gtk` or `PyQtWebEngine`). The script will prompt if GTK is missing.
+- **Output:** `dist/vault-authenticator/` (Optionally installs a desktop shortcut to `~/.local/share/applications/`).
+- **Data Path:** `$XDG_DATA_HOME/vault-authenticator/`
 
-pywebview needs a web-rendering backend on Linux — either GTK
-(`webkit2gtk`, install via your distro's package manager) or Qt
-(`PyQtWebEngine`, pip-installable). The script checks for GTK and offers to
-install the Qt fallback via pip if it's missing.
+---
 
-Creates `dist/vault-authenticator/` and optionally installs a desktop menu
-entry (with icon) to `~/.local/share/applications/`.
+## 📲 Importing Accounts from Phone
 
-- Vault data lives in `$XDG_DATA_HOME/vault-authenticator/` (usually
-  `~/.local/share/vault-authenticator/`).
+Vault natively parses Google Authenticator export QR payloads (`otpauth-migration://`):
 
-### Common notes (all platforms)
+1. Open **Google Authenticator** on your phone.
+2. Tap **Menu (⋮)** → **Transfer accounts** → **Export accounts**.
+3. Select your accounts to generate the export QR code(s).
+4. In Vault, click **Import codes**, then choose:
+   - 📷 **Scan with camera:** Hold your phone's screen up to your computer's webcam.
+   - 🖼️ **Upload image:** Take a screenshot of the QR code and upload/drag it into Vault.
+5. Review the parsed accounts and click **Add to vault**.
 
-- Camera QR scanning requires granting camera permission the first time
-  you use it; **Upload image** always works as a fallback if that's easier.
-- Rebuilding after you change code: just re-run the build script for your
-  OS — it reuses the existing `venv` and rebuilds from scratch.
-- None of these builds are code-signed (that requires a paid developer
-  account on macOS/Windows), so you'll see an OS security warning on first
-  launch — that's expected for a self-built app, not a sign of anything
-  wrong.
+*> **Note:** Exporting does **not** delete codes from your phone. You can use both simultaneously.*
 
-## Versioning & releases (for contributors)
+---
 
-Version bumps and GitHub Releases are fully automated — you never edit the
-version number by hand. `.github/workflows/release.yml` runs on every push
-to `main`:
+## ⚙️ Day-to-Day Usage
 
-1. **Determine the version bump.** [python-semantic-release](https://python-semantic-release.readthedocs.io/)
-   scans commit messages since the last release using [Conventional Commits](https://www.conventionalcommits.org/):
-   - `fix: ...` → patch bump (`0.1.0` → `0.1.1`)
-   - `feat: ...` → minor bump (`0.1.0` → `0.2.0`)
-   - `feat!: ...` or a `BREAKING CHANGE:` footer → major bump (`0.1.0` → `1.0.0`)
-   - `docs:`, `chore:`, `ci:`, `style:`, `refactor:`, `test:` → no release by
-     themselves (no version bump, workflow stops there)
-2. If a bump is warranted, it updates `app.py:__version__`, appends to
-   `CHANGELOG.md`, commits, tags (`vX.Y.Z`), and creates a GitHub Release.
-3. The build job then compiles the macOS/Windows/Linux apps from that exact
-   tagged commit and attaches them to the release as downloadable zips.
+- **Copying Codes:** Click any live 6-digit code to copy it directly to your clipboard.
+- **Locking Vault:** Click **Lock** at any time to re-seal your encrypted vault.
+- **Multiple Exports:** If Google Authenticator generates multiple QR codes, you can scan/upload them sequentially.
 
-If your commit message doesn't follow this convention, nothing gets
-released — that push just sits on `main` with no version bump, which is
-safe (not an error).
+---
 
-Examples:
-```
-feat: add search box to filter accounts
-fix: prevent duplicate camera dialogs on macOS
-feat!: change vault file format (breaking, needs migration)
-```
+## 🔐 Data Storage & Security
 
-## Importing your accounts from your phone
+- **Storage Location:** All encrypted data resides in `data/vault.enc`. Metadata resides in `data/meta.json`.
+- **Encryption:** Master password derives a key using **PBKDF2**, which encrypts the vault contents via **Fernet (AES-256)**.
+- **Resetting:** Deleting `data/vault.enc` and `data/meta.json` completely resets the application to its initial state.
 
-1. On your phone, open **Google Authenticator**
-2. Tap the menu (⋮) → **Transfer accounts** → **Export accounts**
-3. Select the accounts you want to move, and Google Authenticator will show
-   you a QR code
-4. In Vault, click **Import codes**, then either:
-   - **Scan with camera** — hold your phone's QR code up to your webcam, or
-   - **Upload image** — take a screenshot of the QR code on your phone and
-     drag it in
-5. Review the accounts found, then click **Add to vault**
+---
 
-You can repeat this for as many export QR codes as Google Authenticator shows
-you (it batches accounts into multiple QR codes if you have a lot).
+## 🤖 Contributing & Release Workflow
 
-Note: exporting from Google Authenticator does **not** remove them from your
-phone, so your phone keeps working as normal — this just gives you a second
-place to view codes.
+We use automated release management via GitHub Actions:
 
-## Using it day to day
+- **Conventional Commits Required:** Push to `main` triggers `.github/workflows/release.yml`.
+  - `fix: ...` → Triggers **Patch** bump (`0.1.0` → `0.1.1`)
+  - `feat: ...` → Triggers **Minor** bump (`0.1.0` → `0.2.0`)
+  - `feat!: ...` or `BREAKING CHANGE:` → Triggers **Major** bump (`0.1.0` → `1.0.0`)
+- **Automated Builds:** Once a release tag is pushed, CI automatically builds macOS, Windows, and Linux binaries and attaches them as ZIP files to the GitHub Release.
 
-- Each account card shows a live 6-digit code with a countdown ring
-- Click a code to copy it to your clipboard
-- Click **Lock** any time to re-lock the vault (you'll need your master
-  password again to view codes)
+---
 
-## Where your data lives
+## ⚠️ Limitations & Notes
 
-Everything is stored locally in `data/vault.enc`, encrypted. If you delete
-that file (and `data/meta.json`), the app resets to first-run setup.
-
-## Limitations / things to know
-
-- This is a local dev-server style app meant for personal/local use, not for
-  exposing to a network — it binds to `127.0.0.1` only by default; don't
-  change that unless you understand the implications
-- Camera access requires your OS/browser to grant webcam permission to the
-  page (you'll be prompted)
-- If you ever forget your master password, there is no recovery — you'd need
-  to delete `data/vault.enc` and `data/meta.json` and re-import from your
-  phone
+- **Network Scope:** Designed strictly as a local utility. The Flask app binds to `127.0.0.1` by default. Do not expose this port to public networks.
+- **Password Recovery:** There is no master password reset mechanism. If forgotten, encrypted data cannot be recovered.
+- **Code Signing:** Binary builds are unsigned. OS security prompts on first launch are expected for self-built applications.
